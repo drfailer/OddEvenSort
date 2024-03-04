@@ -1,7 +1,9 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi/mpi.h>
 #include <string.h>
+#include <stdbool.h>
 #define SIZE 8
 
 /******************************************************************************/
@@ -14,6 +16,34 @@ void printArr(int *arr, int n) {
         printf("%d ", arr[i]);
     }
     printf("]\n");
+}
+
+/******************************************************************************/
+/*                           generate random array                            */
+/******************************************************************************/
+
+int * generateRandomArr(int size) {
+    int *arr = malloc(size * sizeof(int));
+
+    srand(0);
+
+    for (int i = 0; i < size; ++i) {
+        arr[i] = rand();
+    }
+    return arr;
+}
+
+/******************************************************************************/
+/*                        check if the array is sorted                        */
+/******************************************************************************/
+
+bool assertSorted(int *arr, int size) {
+    for (int i = 0; i < size - 1; ++i) {
+        if (arr[i] > arr[i + 1]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /******************************************************************************/
@@ -91,29 +121,21 @@ void sortSubArrays(int *subArr, int *subArrShared, int subArrSize) {
     memcpy(subArrShared, tmp + subArrSize, sizeof(int) * subArrSize);
 }
 
-
-/******************************************************************************/
-/*                                    main                                    */
-/******************************************************************************/
-
-int main(int argc, char **argv) {
+void sortEvenOdd(int *arr, int size) {
     int rank=-1;
     int nbprocs=0;
     int tag = 50;
     MPI_Status status;
-    int arr[SIZE] = {
-        2, 3, 1, 4, 7, 8, 5, 6
-    };
+    int subArrSize;
+    int *subArr;
+    int *subArrShared;
 
-    /* runBubbleSort(); */
-
-    MPI_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
 
-    int subArrSize = SIZE / nbprocs;
-    int *subArr = malloc(subArrSize * sizeof(int));
-    int *subArrShared = malloc(subArrSize * sizeof(int));
+    subArrSize = size / nbprocs;
+    subArr = malloc(subArrSize * sizeof(int));
+    subArrShared = malloc(subArrSize * sizeof(int));
 
     MPI_Scatter(arr, subArrSize, MPI_INT, subArr, subArrSize, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -151,9 +173,28 @@ int main(int argc, char **argv) {
     MPI_Gather(subArr, subArrSize, MPI_INT, arr, subArrSize, MPI_INT, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        printArr(arr, SIZE);
+        printArr(arr, size);
+        assert(assertSorted(arr, size));
     }
+}
+
+/******************************************************************************/
+/*                                    main                                    */
+/******************************************************************************/
+
+int main(int argc, char **argv) {
+    /* int arr[SIZE] = { */
+    /*     2, 3, 1, 4, 7, 8, 5, 6 */
+    /* }; */
+    int *arr = generateRandomArr(100);
+
+    /* runBubbleSort(); */
+
+    MPI_Init( &argc, &argv );
+
+    sortEvenOdd(arr, SIZE);
 
     MPI_Finalize();
+    free(arr);
     return 0;
 }
