@@ -183,6 +183,9 @@ void sortEvenOdd(int *arr, int size) {
     MPI_Comm_rank( MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
 
+    // verify if the SIZE is valid
+    assert(SIZE >= nbprocs && SIZE % nbprocs == 0);
+
     subArrSize = size / nbprocs;
     subArr = malloc(subArrSize * sizeof(int));
     subArrShared = malloc(subArrSize * sizeof(int));
@@ -207,6 +210,9 @@ void sortEvenOdd(int *arr, int size) {
         printArr(arr, size);
         assert(assertSorted(arr, size));
     }
+
+    free(subArr);
+    free(subArrShared);
 }
 
 /******************************************************************************/
