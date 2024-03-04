@@ -4,7 +4,7 @@
 #include <mpi/mpi.h>
 #include <string.h>
 #include <stdbool.h>
-#define SIZE 8
+#define SIZE 16
 
 /******************************************************************************/
 /*                                print array                                 */
@@ -28,7 +28,7 @@ int * generateRandomArr(int size) {
     srand(0);
 
     for (int i = 0; i < size; ++i) {
-        arr[i] = rand();
+        arr[i] = rand() % 20;
     }
     return arr;
 }
@@ -51,8 +51,8 @@ bool assertSorted(int *arr, int size) {
 /******************************************************************************/
 
 void bubbleSort(int *arr, int n, int (*compare)(int, int)) {
-    for (int i = 0; i < n - 1; ++i) {
-        for (int j = 0; j <= i; ++j) {
+    for (int i = n - 1; i >= 0; --i) {
+        for (int j = 0; j < i; ++j) {
             if (compare(arr[j], arr[j + 1])) {
                 int tmp = arr[j];
                 arr[j] = arr[j + 1];
@@ -121,6 +121,10 @@ void sortSubArrays(int *subArr, int *subArrShared, int subArrSize) {
     memcpy(subArrShared, tmp + subArrSize, sizeof(int) * subArrSize);
 }
 
+/******************************************************************************/
+/*                               sort even odd                                */
+/******************************************************************************/
+
 void sortEvenOdd(int *arr, int size) {
     int rank=-1;
     int nbprocs=0;
@@ -141,6 +145,8 @@ void sortEvenOdd(int *arr, int size) {
 
     // on trie le sous-tableau
     bubbleSort(subArr, subArrSize, &greater);
+    printf("=> ");
+    printArr(subArr, subArrSize);
 
     for (int i = 0; i < nbprocs/2; ++i) {
         if (rank % 2 == 0) {
@@ -186,15 +192,19 @@ int main(int argc, char **argv) {
     /* int arr[SIZE] = { */
     /*     2, 3, 1, 4, 7, 8, 5, 6 */
     /* }; */
-    int *arr = generateRandomArr(100);
+    int *arr = generateRandomArr(SIZE);
+    printArr(arr, SIZE);
+
+    bubbleSort(arr, SIZE, &greater);
+    printArr(arr, SIZE);
 
     /* runBubbleSort(); */
 
-    MPI_Init( &argc, &argv );
+    /* MPI_Init( &argc, &argv ); */
 
-    sortEvenOdd(arr, SIZE);
+    /* sortEvenOdd(arr, SIZE); */
 
-    MPI_Finalize();
-    free(arr);
+    /* MPI_Finalize(); */
+    /* free(arr); */
     return 0;
 }
