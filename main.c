@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi/mpi.h>
+#include <string.h>
 #define SIZE 8
 
 /******************************************************************************/
@@ -13,12 +14,6 @@ void printArr(int *arr, int n) {
         printf("%d ", arr[i]);
     }
     printf("]\n");
-}
-
-void arrCpy(int *dest, int *src, int n) {
-    for (int i = 0; i < n; ++i) {
-        dest[i] = src[i];
-    }
 }
 
 /******************************************************************************/
@@ -92,8 +87,8 @@ void sortSubArrays(int *subArr, int *subArrShared, int subArrSize) {
     int *tmp = malloc(subArrSize * 2 * sizeof(int));
 
     merge(tmp, subArr, subArrShared, subArrSize);
-    arrCpy(subArr, tmp, subArrSize);
-    arrCpy(subArrShared, tmp + subArrSize, subArrSize);
+    memcpy(subArr, tmp, sizeof(int) * subArrSize);
+    memcpy(subArrShared, tmp + subArrSize, sizeof(int) * subArrSize);
 }
 
 
@@ -125,7 +120,7 @@ int main(int argc, char **argv) {
     // on trie le sous-tableau
     bubbleSort(subArr, subArrSize, &greater);
 
-    for (int i = 0; i <= nbprocs/2; ++i) {
+    for (int i = 0; i < nbprocs/2; ++i) {
         if (rank % 2 == 0) {
             // phase 1: the even sent to its N + 1
             if (rank < nbprocs - 1) {
