@@ -4,7 +4,7 @@
 #include <mpi/mpi.h>
 #include <string.h>
 #include <stdbool.h>
-#define SIZE 16
+#define SIZE 40000
 
 /******************************************************************************/
 /*                                print array                                 */
@@ -28,7 +28,7 @@ int * generateRandomArr(int size) {
     srand(0);
 
     for (int i = 0; i < size; ++i) {
-        arr[i] = rand() % 20;
+        arr[i] = rand();
     }
     return arr;
 }
@@ -72,6 +72,13 @@ int less(int a, int b) {
 
 int greater(int a, int b) {
     return a > b;
+}
+
+/* greater for qsort */
+int greaterFn(const void * a, const void * b) {
+    int lhs = *(const int*) a;
+    int rhs = *(const int*) b;
+    return lhs - rhs;
 }
 
 /******************************************************************************/
@@ -125,6 +132,45 @@ void sortSubArrays(int *subArr, int *subArrShared, int subArrSize) {
 /*                               sort even odd                                */
 /******************************************************************************/
 
+/*
+ * Manage communication for even rank processes.
+ */
+void execEven(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
+        int rank, int tag, MPI_Status* status) {
+    // phase 1: the even sent to its N + 1
+    if (rank < nbprocs - 1) {
+        MPI_Recv(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD, status);
+        sortSubArrays(subArr, subArrShared, subArrSize);
+        MPI_Send(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD);
+    }
+    // phase 2: the odd (N - 1) works with its N + 1
+    if (rank > 0) {
+        MPI_Send(subArr, subArrSize, MPI_INT, rank - 1, tag, MPI_COMM_WORLD);
+        MPI_Recv(subArr, subArrSize, MPI_INT, rank - 1, tag, MPI_COMM_WORLD, status);
+    }
+}
+
+/*
+ * Manage communication for odd rank processes.
+ */
+void execOdd(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
+        int rank, int tag, MPI_Status* status) {
+    // phase 1: the event (N - 1) works with its N + 1
+    if (rank > 0) {
+        MPI_Send(subArr, subArrSize, MPI_INT, rank - 1, tag, MPI_COMM_WORLD);
+        MPI_Recv(subArr, subArrSize, MPI_INT, rank - 1, tag, MPI_COMM_WORLD, status);
+    }
+    // phase 2: the odd works to its N + 1
+    if (rank < nbprocs - 1) {
+        MPI_Recv(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD, status);
+        sortSubArrays(subArr, subArrShared, subArrSize);
+        MPI_Send(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD);
+    }
+}
+
+/*
+ * The sort algorithm.
+ */
 void sortEvenOdd(int *arr, int size) {
     int rank=-1;
     int nbprocs=0;
@@ -143,36 +189,15 @@ void sortEvenOdd(int *arr, int size) {
 
     MPI_Scatter(arr, subArrSize, MPI_INT, subArr, subArrSize, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // on trie le sous-tableau
-    bubbleSort(subArr, subArrSize, &greater);
-    printf("=> ");
-    printArr(subArr, subArrSize);
+    // sort the sub array
+    /* bubbleSort(subArr, subArrSize, &greater); */
+    qsort(subArr, subArrSize, sizeof(int), &greaterFn);
 
     for (int i = 0; i < nbprocs/2; ++i) {
         if (rank % 2 == 0) {
-            // phase 1: the even sent to its N + 1
-            if (rank < nbprocs - 1) {
-                MPI_Recv(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD, &status);
-                sortSubArrays(subArr, subArrShared, subArrSize);
-                MPI_Send(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD);
-            }
-            // phase 2: the odd (N - 1) works with its N + 1
-            if (rank > 0) {
-                MPI_Send(subArr, subArrSize, MPI_INT, rank - 1, tag, MPI_COMM_WORLD);
-                MPI_Recv(subArr, subArrSize, MPI_INT, rank - 1, tag, MPI_COMM_WORLD, &status);
-            }
+            execEven(subArr, subArrShared, subArrSize, nbprocs, rank, tag, &status);
         } else {
-            // phase 1: the event (N - 1) works with its N + 1
-            if (rank > 0) {
-                MPI_Send(subArr, subArrSize, MPI_INT, rank - 1, tag, MPI_COMM_WORLD);
-                MPI_Recv(subArr, subArrSize, MPI_INT, rank - 1, tag, MPI_COMM_WORLD, &status);
-            }
-            // phase 2: the odd works to its N + 1
-            if (rank < nbprocs - 1) {
-                MPI_Recv(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD, &status);
-                sortSubArrays(subArr, subArrShared, subArrSize);
-                MPI_Send(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD);
-            }
+            execOdd(subArr, subArrShared, subArrSize, nbprocs, rank, tag, &status);
         }
     }
 
@@ -189,22 +214,17 @@ void sortEvenOdd(int *arr, int size) {
 /******************************************************************************/
 
 int main(int argc, char **argv) {
-    /* int arr[SIZE] = { */
-    /*     2, 3, 1, 4, 7, 8, 5, 6 */
-    /* }; */
     int *arr = generateRandomArr(SIZE);
-    printArr(arr, SIZE);
 
+    #ifdef RUN_BUBBLESORT
     bubbleSort(arr, SIZE, &greater);
     printArr(arr, SIZE);
+    runBubbleSort();
+    #endif
 
-    /* runBubbleSort(); */
-
-    /* MPI_Init( &argc, &argv ); */
-
-    /* sortEvenOdd(arr, SIZE); */
-
-    /* MPI_Finalize(); */
-    /* free(arr); */
+    MPI_Init( &argc, &argv );
+    sortEvenOdd(arr, SIZE);
+    MPI_Finalize();
+    free(arr);
     return 0;
 }
