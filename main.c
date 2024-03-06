@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
     sortEvenOdd(arr, 80);
     if (rank == 0) {
         assert(assertSorted(arr, 80));
+        printArr(arr, 80);
     }
     MPI_Finalize();
     #endif
