@@ -25,7 +25,7 @@ void merge(int *dest, int *a, int *b, int n) {
     memcpy(dest + idx, b + idxb, (n - idxb) * sizeof(int));
 }
 
-void sortSubArrays(int *subArr, int *subArrShared, int subArrSize) {
+void mergeSubArrays(int *subArr, int *subArrShared, int subArrSize) {
     int *tmp = malloc(subArrSize * 2 * sizeof(int));
 
     merge(tmp, subArr, subArrShared, subArrSize);
@@ -45,7 +45,7 @@ void execEven(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
     // phase 1: the even sent to its N + 1
     if (rank < nbprocs - 1) {
         MPI_Recv(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD, status);
-        sortSubArrays(subArr, subArrShared, subArrSize);
+        mergeSubArrays(subArr, subArrShared, subArrSize);
         MPI_Send(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD);
     }
     // phase 2: the odd (N - 1) works with its N + 1
@@ -68,7 +68,7 @@ void execOdd(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
     // phase 2: the odd works to its N + 1
     if (rank < nbprocs - 1) {
         MPI_Recv(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD, status);
-        sortSubArrays(subArr, subArrShared, subArrSize);
+        mergeSubArrays(subArr, subArrShared, subArrSize);
         MPI_Send(subArrShared, subArrSize, MPI_INT, rank + 1, tag, MPI_COMM_WORLD);
     }
 }
@@ -86,10 +86,10 @@ void sortEvenOdd(int *arr, int size, bool measureTime) {
     int *subArrShared;
     double tStart, tEnd;
 
-    MPI_Comm_rank( MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
 
-    // verify if the SIZE is valid
+    // verify if the size is valid
     assert(size >= nbprocs && size % nbprocs == 0);
 
     subArrSize = size / nbprocs;
