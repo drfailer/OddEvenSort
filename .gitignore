@@ -1,2 +1,5 @@
 build
 prog
+build-perf
+tests
+perf

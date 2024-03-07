@@ -119,17 +119,26 @@ Test(evenoddsortSame) {
 /******************************************************************************/
 
 int main(int argc, char **argv) {
+    int result = 0;
     MPI_Init( &argc, &argv );
+    #ifdef PERFORMANCE_MEASURE
+    int nbprocs = -1;
+    MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
+    int size = nbprocs * 100000000;
+    int *arr = generateRandomArr(size);
+    sortEvenOdd(arr, size, true);
+    free(arr);
+    #else
     MPI_TestInit();
-
     TestRun(bubblesort, "test sequential bubblesort");
     TestRun(evenoddsortOneElement, "evenoddsort with on element per thread");
     TestRun(evenoddsortSame, "evenoddsort same value in the array");
-    TestRun(evenoddsortGeneral, "evenoddsort general case");
+    TestRun(evenoddsortGeneral, "evenoddsort general case (random array)");
     TestRun(evenoddsortWorst, "evenoddsort worst case");
     TestRun(evenoddsortAlreadySorted, "the array is already sorted");
-
     MPI_TestEnd();
+    result = TEST_RESULT; // we exit with the test result
+    #endif
     MPI_Finalize();
-    return TEST_RESULT;
+    return result;
 }

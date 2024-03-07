@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
 
-mpirun -np 4 ./prog
-
+if [ $# -eq 0 ]; then
+    echo "running tests"
+    mpirun -np 4 ./tests
+else
+    echo "running perf"
+    mpirun -np 4 ./perf
+fi
