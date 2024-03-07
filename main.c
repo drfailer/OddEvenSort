@@ -82,6 +82,23 @@ Test(evenoddsortWorst) {
     return 0;
 }
 
+Test(evenoddsortAlreadySorted) {
+    int nbprocs = -1;
+    MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
+    int size = nbprocs * 20;
+    int *arr = malloc(size * sizeof(int));
+
+    for (int i = 0; i < size; ++i) {
+        arr[i] = i;
+    }
+
+    sortEvenOdd(arr, size, false);
+    MPI_assert(assertSorted(arr, size));
+
+    free(arr);
+    return 0;
+}
+
 Test(evenoddsortSame) {
     int nbprocs = -1;
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
@@ -110,6 +127,7 @@ int main(int argc, char **argv) {
     TestRun(evenoddsortSame, "evenoddsort same value in the array");
     TestRun(evenoddsortGeneral, "evenoddsort general case");
     TestRun(evenoddsortWorst, "evenoddsort worst case");
+    TestRun(evenoddsortAlreadySorted, "the array is already sorted");
 
     MPI_TestEnd();
     MPI_Finalize();
