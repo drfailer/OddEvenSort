@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+#SBATCH --job-name=evenoddsort
+#SBATCH --time=10:00
+#SBATCH --ntasks=8
+#SBATCH --ntasks-per-core=1
+#SBATCH --output=evenoddsort.stdout
+#SBATCH --error=evenoddsort.stderr
+
+# run on slurm: sbatch ./run
+
+if [ $# -eq 0 ]; then
+    echo "running tests"
+    mpiexec ./tests
+else
+    echo "running perf"
+    mpiexec ./perf
+fi
+
