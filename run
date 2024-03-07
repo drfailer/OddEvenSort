@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+NB_PROCS=4
+
 if [ $# -eq 0 ]; then
     echo "running tests"
-    mpirun -np 4 ./tests
+    mpirun -np $NB_PROCS ./tests
 else
     echo "running perf"
-    mpirun -np 4 ./perf
+    mpirun -np $NB_PROCS ./perf
 fi
