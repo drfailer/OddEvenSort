@@ -113,5 +113,5 @@ int main(int argc, char **argv) {
 
     MPI_TestEnd();
     MPI_Finalize();
-    return 0;
+    return TEST_RESULT;
 }
