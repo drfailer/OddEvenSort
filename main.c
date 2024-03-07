@@ -1,35 +1,117 @@
 #include <stdlib.h>
-#include <mpi/mpi.h>
+#include <mpi.h>
 #include "utils.h"
-#include <assert.h>
-#ifdef RUN_BUBBLESORT
+#include <string.h>
 #include "bubblesort.h"
-#else
 #include "evenoddsort.h"
-#endif
+#include "quick-test-c/quicktest.h"
+
+/******************************************************************************/
+/*                                   tests                                    */
+/******************************************************************************/
+
+Test(bubblesort) {
+    int rank = -1;
+
+    MPI_Comm_rank( MPI_COMM_WORLD, &rank);
+
+    /* sequential test is run just for 0 */
+    if (rank == 0) {
+        int *arr = generateRandomArr(20);
+
+        bubbleSort(arr, 20, &greater);
+        assert(assertSorted(arr, 20));
+
+        /* same value */
+        memset(arr, 0, 20 * sizeof(int));
+        bubbleSort(arr, 20, &greater);
+        assert(assertSorted(arr, 20));
+
+        /* worst case */
+        for (int i = 0; i < 20; ++i) {
+            arr[i] = 20 - i;
+        }
+        bubbleSort(arr, 20, &greater);
+        assert(assertSorted(arr, 20));
+
+        free(arr);
+    }
+    return 0;
+}
+
+Test(evenoddsortOneElement) {
+    int nbprocs = -1;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
+    int *arr = generateRandomArr(nbprocs);
+
+    sortEvenOdd(arr, nbprocs, false);
+    MPI_assert(assertSorted(arr, nbprocs));
+
+    free(arr);
+    return 0;
+}
+
+Test(evenoddsortGeneral) {
+    int nbprocs = -1;
+    MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
+    int size = nbprocs * 20;
+    int *arr = generateRandomArr(size);
+
+    sortEvenOdd(arr, size, false);
+    MPI_assert(assertSorted(arr, size));
+
+    free(arr);
+    return 0;
+}
+
+Test(evenoddsortWorst) {
+    int nbprocs = -1;
+    MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
+    int size = nbprocs * 20;
+    int *arr = malloc(size * sizeof(int));
+
+    for (int i = 0; i < size; ++i) {
+        arr[i] = size - i;
+    }
+
+    sortEvenOdd(arr, size, false);
+    MPI_assert(assertSorted(arr, size));
+
+    free(arr);
+    return 0;
+}
+
+Test(evenoddsortSame) {
+    int nbprocs = -1;
+    MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
+    int size = nbprocs * 20;
+    int *arr = malloc(size * sizeof(int));
+
+    memset(arr, 1, size*sizeof(int));
+
+    sortEvenOdd(arr, size, false);
+    MPI_assert(assertSorted(arr, size));
+
+    free(arr);
+    return 0;
+}
 
 /******************************************************************************/
 /*                                    main                                    */
 /******************************************************************************/
 
 int main(int argc, char **argv) {
-    int *arr = generateRandomArr(80);
-    int rank = -1;
-
-    #ifdef RUN_BUBBLESORT
-    bubbleSort(arr, 80, &greater);
-    printArr(arr, 80);
-    #else
     MPI_Init( &argc, &argv );
-    MPI_Comm_rank( MPI_COMM_WORLD, &rank);
-    sortEvenOdd(arr, 80);
-    if (rank == 0) {
-        assert(assertSorted(arr, 80));
-        printArr(arr, 80);
-    }
-    MPI_Finalize();
-    #endif
+    MPI_TestInit();
 
-    free(arr);
+    TestRun(bubblesort, "test sequential bubblesort");
+    TestRun(evenoddsortOneElement, "evenoddsort with on element per thread");
+    TestRun(evenoddsortSame, "evenoddsort same value in the array");
+    TestRun(evenoddsortGeneral, "evenoddsort general case");
+    TestRun(evenoddsortWorst, "evenoddsort worst case");
+
+    MPI_TestEnd();
+    MPI_Finalize();
     return 0;
 }

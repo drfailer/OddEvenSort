@@ -1,8 +1,9 @@
+#include "evenoddsort.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <mpi/mpi.h>
+#include <mpi.h>
 #include "utils.h"
 
 /******************************************************************************/
@@ -19,18 +20,9 @@ void merge(int *dest, int *a, int *b, int n) {
             dest[idx++] = b[idxb++];
         }
     }
-
-    if (idxa < n) {
-        while (idxa < n) {
-            dest[idx++] = a[idxa++];
-        }
-        /* memcpy(dest + idx, a + idxa, (n - idxa) * sizeof(int)); */
-    } else if (idxb < n) {
-        while (idxb < n) {
-            dest[idx++] = b[idxb++];
-        }
-        /* memcpy(dest + idx, b + idxb, (n - idxb) * sizeof(int)); */
-    }
+    // merge the end of arrays
+    memcpy(dest + idx, a + idxa, (n - idxa) * sizeof(int));
+    memcpy(dest + idx, b + idxb, (n - idxb) * sizeof(int));
 }
 
 void sortSubArrays(int *subArr, int *subArrShared, int subArrSize) {
@@ -84,7 +76,7 @@ void execOdd(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
 /*
  * The sort algorithm.
  */
-void sortEvenOdd(int *arr, int size) {
+void sortEvenOdd(int *arr, int size, bool measureTime) {
     int rank = -1;
     int nbprocs = 0;
     int tag = 50;
@@ -107,12 +99,17 @@ void sortEvenOdd(int *arr, int size) {
     MPI_Scatter(arr, subArrSize, MPI_INT, subArr, subArrSize, MPI_INT, 0, MPI_COMM_WORLD);
 
     /* time measure */
-    MPI_Barrier(MPI_COMM_WORLD);
-    tStart = MPI_Wtime();
+    if (measureTime) {
+        MPI_Barrier(MPI_COMM_WORLD);
+        tStart = MPI_Wtime();
+    }
 
     // sort the sub array
-    /* bubbleSort(subArr, subArrSize, &greater); */
+    #ifdef USE_BUBBLESORT
+    bubbleSort(subArr, subArrSize, &greater);
+    #else
     qsort(subArr, subArrSize, sizeof(int), &qgreater);
+    #endif
 
     for (int i = 0; i < nbprocs/2; ++i) {
         if (rank % 2 == 0) {
@@ -125,15 +122,13 @@ void sortEvenOdd(int *arr, int size) {
     MPI_Gather(subArr, subArrSize, MPI_INT, arr, subArrSize, MPI_INT, 0, MPI_COMM_WORLD);
 
     /* time measure */
-    MPI_Barrier(MPI_COMM_WORLD);
-    tEnd = MPI_Wtime();
-    printf("process: %d, time: %lf\n", rank, tEnd - tStart);
-
-    if (rank == 0) {
-        printArr(arr, size);
-        assert(assertSorted(arr, size));
+    if (measureTime) {
+        MPI_Barrier(MPI_COMM_WORLD);
+        tEnd = MPI_Wtime();
+        printf("process: %d, time: %lf\n", rank, tEnd - tStart);
     }
 
+    // FREE
     free(subArr);
     free(subArrShared);
 }
