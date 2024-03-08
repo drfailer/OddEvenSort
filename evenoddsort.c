@@ -25,7 +25,7 @@ void merge(int *dest, int *a, int *b, int n) {
     memcpy(dest + idx, b + idxb, (n - idxb) * sizeof(int));
 }
 
-void mergeSubArrays(int *subArr, int *subArrShared, int subArrSize) {
+void mergeSubArrays(int *subArr, int *subArrShared, long subArrSize) {
     int *tmp = malloc(subArrSize * 2 * sizeof(int));
 
     merge(tmp, subArr, subArrShared, subArrSize);
@@ -40,7 +40,7 @@ void mergeSubArrays(int *subArr, int *subArrShared, int subArrSize) {
 /*
  * Manage communication for even rank processes.
  */
-void execEven(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
+void execEven(int *subArr, int *subArrShared, long subArrSize, int nbprocs,
         int rank, int tag, MPI_Status* status) {
     // phase 1: the even sent to its N + 1
     if (rank < nbprocs - 1) {
@@ -58,7 +58,7 @@ void execEven(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
 /*
  * Manage communication for odd rank processes.
  */
-void execOdd(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
+void execOdd(int *subArr, int *subArrShared, long subArrSize, int nbprocs,
         int rank, int tag, MPI_Status* status) {
     // phase 1: the event (N - 1) works with its N + 1
     if (rank > 0) {
@@ -76,12 +76,12 @@ void execOdd(int *subArr, int *subArrShared, int subArrSize, int nbprocs,
 /*
  * The sort algorithm.
  */
-void sortEvenOdd(int *arr, int size, bool measureTime) {
+void sortEvenOdd(int *arr, long size, bool measureTime) {
     int rank = -1;
     int nbprocs = 0;
     int tag = 50;
     MPI_Status status;
-    int subArrSize;
+    long subArrSize;
     int *subArr;
     int *subArrShared;
     double tStart, tEnd;

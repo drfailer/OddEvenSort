@@ -2,6 +2,6 @@
 #define EVENODDSORT_HPP
 #include <stdbool.h>
 
-void sortEvenOdd(int *arr, int size, bool measureTime);
+void sortEvenOdd(int *arr, long size, bool measureTime);
 
 #endif

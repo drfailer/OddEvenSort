@@ -6,7 +6,7 @@
 /*                                print array                                 */
 /******************************************************************************/
 
-void printArr(int *arr, int n) {
+void printArr(int *arr, long n) {
     printf("[ ");
     for (int i  = 0; i < n; ++i) {
         printf("%d ", arr[i]);
@@ -18,12 +18,12 @@ void printArr(int *arr, int n) {
 /*                           generate random array                            */
 /******************************************************************************/
 
-int * generateRandomArr(int size) {
+int * generateRandomArr(long size) {
     int *arr = malloc(size * sizeof(int));
 
     srand(0);
 
-    for (int i = 0; i < size; ++i) {
+    for (long i = 0; i < size; ++i) {
         arr[i] = rand();
     }
     return arr;
@@ -59,8 +59,8 @@ int qgreater(const void * a, const void * b) {
 /*                        check if the array is sorted                        */
 /******************************************************************************/
 
-bool assertSorted(int *arr, int size) {
-    for (int i = 0; i < size - 1; ++i) {
+bool assertSorted(int *arr, long size) {
+    for (long i = 0; i < size - 1; ++i) {
         if (arr[i] > arr[i + 1]) {
             return false;
         }

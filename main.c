@@ -55,7 +55,7 @@ Test(evenoddsortOneElement) {
 Test(evenoddsortGeneral) {
     int nbprocs = -1;
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
-    int size = nbprocs * 20;
+    long size = nbprocs * 20;
     int *arr = generateRandomArr(size);
 
     sortEvenOdd(arr, size, false);
@@ -68,7 +68,7 @@ Test(evenoddsortGeneral) {
 Test(evenoddsortWorst) {
     int nbprocs = -1;
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
-    int size = nbprocs * 20;
+    long size = nbprocs * 20;
     int *arr = malloc(size * sizeof(int));
 
     for (int i = 0; i < size; ++i) {
@@ -85,7 +85,7 @@ Test(evenoddsortWorst) {
 Test(evenoddsortAlreadySorted) {
     int nbprocs = -1;
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
-    int size = nbprocs * 20;
+    long size = nbprocs * 20;
     int *arr = malloc(size * sizeof(int));
 
     for (int i = 0; i < size; ++i) {
@@ -102,7 +102,7 @@ Test(evenoddsortAlreadySorted) {
 Test(evenoddsortSame) {
     int nbprocs = -1;
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
-    int size = nbprocs * 20;
+    long size = nbprocs * 20;
     int *arr = malloc(size * sizeof(int));
 
     memset(arr, 1, size*sizeof(int));
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
     #ifdef PERFORMANCE_MEASURE
     int nbprocs = -1;
     MPI_Comm_size(MPI_COMM_WORLD, &nbprocs);
-    int size = nbprocs * 100000000;
+    long size = nbprocs * 100000000;
     int *arr = generateRandomArr(size);
     sortEvenOdd(arr, size, true);
     free(arr);
