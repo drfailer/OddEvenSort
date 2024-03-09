@@ -96,13 +96,13 @@ void sortEvenOdd(int *arr, long size, bool measureTime) {
     subArr = malloc(subArrSize * sizeof(int));
     subArrShared = malloc(subArrSize * sizeof(int));
 
-    MPI_Scatter(arr, subArrSize, MPI_INT, subArr, subArrSize, MPI_INT, 0, MPI_COMM_WORLD);
-
     /* time measure */
     if (measureTime) {
         MPI_Barrier(MPI_COMM_WORLD);
         tStart = MPI_Wtime();
     }
+
+    MPI_Scatter(arr, subArrSize, MPI_INT, subArr, subArrSize, MPI_INT, 0, MPI_COMM_WORLD);
 
     // sort the sub array
     #ifdef USE_BUBBLESORT
